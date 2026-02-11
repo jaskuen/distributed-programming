@@ -28,8 +28,6 @@ public class SummaryModel : PageModel
     {
         _logger.LogDebug(id);
 
-        // TODO: (pa1) проинициализировать свойства Rank и Similarity значениями из БД (Redis)
-
         string? val = _redis.StringGet(KeyBuilder.BuildRankKey(id)).ToString().Replace('.', ',');
 
         if (!double.TryParse(val, out var rank))
