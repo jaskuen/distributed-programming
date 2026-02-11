@@ -1,3 +1,5 @@
+using StackExchange.Redis;
+
 namespace Valuator;
 
 public class Program
@@ -9,6 +11,9 @@ public class Program
         // Add services to the container.
         builder.Services.AddRazorPages();
 
+        builder.Services.AddSingleton<IConnectionMultiplexer>(options =>
+            ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -16,6 +21,7 @@ public class Program
         {
             app.UseExceptionHandler("/Error");
         }
+
         app.UseStaticFiles();
 
         app.UseRouting();
