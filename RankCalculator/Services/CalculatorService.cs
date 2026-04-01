@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using MassTransit;
+using RankCalculator.Messages;
 using StackExchange.Redis;
 using Utils;
 using Valuator.Messages;
@@ -10,10 +11,12 @@ public class CalculatorService : IConsumer<ITextCreated>
 {
     private readonly IConnectionMultiplexer _connectionMultiplexer;
     private readonly IDatabase _redis;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public CalculatorService(IConnectionMultiplexer connectionMultiplexer)
+    public CalculatorService(IConnectionMultiplexer connectionMultiplexer, IPublishEndpoint publishEndpoint)
     {
         _connectionMultiplexer = connectionMultiplexer;
+        _publishEndpoint = publishEndpoint;
         _redis = _connectionMultiplexer.GetDatabase();
     }
 
@@ -21,12 +24,12 @@ public class CalculatorService : IConsumer<ITextCreated>
     {
         string id = context.Message.Id;
 
-        Calculate(id);
-        
+        await Calculate(id);
+
         await Task.CompletedTask;
     }
 
-    private void Calculate(string id)
+    private async Task Calculate(string id)
     {
         string text = _redis.StringGet(KeyBuilder.BuildTextKey(id))!;
 
@@ -36,7 +39,7 @@ public class CalculatorService : IConsumer<ITextCreated>
         {
             throw new Exception("No text found for id: " + id);
         }
-        
+
         int notAlphabetCount = 0;
 
         foreach (char c in text)
@@ -51,5 +54,11 @@ public class CalculatorService : IConsumer<ITextCreated>
         double rank = (double)notAlphabetCount / text.Length;
 
         _redis.StringSet(rankKey, rank.ToString(CultureInfo.InvariantCulture));
+
+        await _publishEndpoint.Publish<IRankCalculated>(new
+        {
+            Id = id,
+            Rank = rank,
+        });
     }
 }

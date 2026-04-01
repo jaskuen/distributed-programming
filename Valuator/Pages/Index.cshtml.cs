@@ -69,6 +69,12 @@ public class IndexModel : PageModel
         
             _redis.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
 
+            await _publishEndpoint.Publish<ISimilarityCalculated>(new
+            {
+                Id = id,
+                Similarity = similarity,
+            });
+
             return Redirect($"summary?id={id}");
         }
         catch (Exception e)

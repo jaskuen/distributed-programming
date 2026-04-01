@@ -1,6 +1,5 @@
-﻿using MassTransit;
-using RankCalculator.Services;
-using StackExchange.Redis;
+﻿using EventsLogger.Events;
+using MassTransit;
 
 public class Program
 {
@@ -11,8 +10,8 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
 
-        builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
-            ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
+        builder.Services.AddScoped<RankCalculatedEvent>();
+        builder.Services.AddScoped<SimilarityCalculatedEvent>();
 
         builder.Services.AddMassTransit(x =>
         {
@@ -22,14 +21,11 @@ public class Program
                     "save-text-event",
                     e =>
                     {
-                        e.Consumer(typeof(CalculatorService), context.GetRequiredService);
+                        e.Consumer(typeof(RankCalculatedEvent), context.GetRequiredService);
+                        e.Consumer(typeof(SimilarityCalculatedEvent), context.GetRequiredService);
                     });
-                
-                rabbitMqBusFactoryConfigurator.ConfigureEndpoints(context);
             });
         });
-
-        builder.Services.AddScoped<CalculatorService>();
 
         var app = builder.Build();
         await app.RunAsync();
