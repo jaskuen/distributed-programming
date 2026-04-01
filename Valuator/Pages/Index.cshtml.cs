@@ -24,51 +24,64 @@ public class IndexModel : PageModel
     {
     }
 
-    public IActionResult OnPost(string text)
+    public IActionResult OnPost(string? text)
     {
-        _logger.LogDebug(text);
-
-        string id = Guid.NewGuid().ToString();
-
-        string textKey = KeyBuilder.BuildTextKey(id);
-        _redis.StringSet(textKey, text);
-
-        string rankKey = KeyBuilder.BuildRankKey(id);
-
-        string regex = "[A-Za-zА-Яа-я]";
-        int lettersCount = Regex.Count(text, regex, RegexOptions.None);
-
-        double rank = (double)lettersCount / text.Length;
-
-        _redis.StringSet(rankKey, rank.ToString(CultureInfo.InvariantCulture));
-
-        string similarityKey = KeyBuilder.BuildSimilarityKey(id);
-
-        var keys =
-            _redis
-                .Multiplexer
-                .GetServer(_connectionMultiplexer.GetEndPoints().First()).Keys(database: 0, pattern: "TEXT-*");
-
-        int similarity = 0;
-
-        foreach (var key in keys)
+        try
         {
-            string stringKey = key.ToString();
-            
-            if (stringKey == textKey)
+            if (string.IsNullOrWhiteSpace(text))
             {
-                continue;
+                throw new Exception("Text is empty");
             }
 
-            if (text == _redis.StringGet(key).ToString())
+            string id = Guid.NewGuid().ToString();
+
+            _logger.LogDebug(text);
+
+            string textKey = KeyBuilder.BuildTextKey(id);
+
+            string rankKey = KeyBuilder.BuildRankKey(id);
+
+            int notAlphabetCount = 0;
+
+            foreach (char c in text)
             {
-                similarity = 1;
-                break;
+                if (!char.IsAsciiLetter(c))
+                {
+                    notAlphabetCount++;
+                }
             }
+
+            double rank = (double)notAlphabetCount / text.Length;
+
+            _redis.StringSet(rankKey, rank.ToString(CultureInfo.InvariantCulture));
+
+            string similarityKey = KeyBuilder.BuildSimilarityKey(id);
+
+            var keys =
+                _redis
+                    .Multiplexer
+                    .GetServer(_connectionMultiplexer.GetEndPoints().First()).Keys(database: 0, pattern: "TEXT-*");
+
+            int similarity = 0;
+
+            foreach (var key in keys)
+            {
+                if (text == _redis.StringGet(key).ToString())
+                {
+                    similarity = 1;
+                    break;
+                }
+            }
+
+            _redis.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
+            _redis.StringSet(textKey, text.ToString(CultureInfo.InvariantCulture));
+            return Redirect($"summary?id={id}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e.Message);
         }
 
-        _redis.StringSet(similarityKey, similarity);
-
-        return Redirect($"summary?id={id}");
+        return Page();
     }
 }

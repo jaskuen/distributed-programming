@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Localization;
 using StackExchange.Redis;
 using Valuator.Utils;
 
@@ -26,22 +22,18 @@ public class SummaryModel : PageModel
 
     public void OnGet(string id)
     {
-        _logger.LogDebug(id);
-
-        string? val = _redis.StringGet(KeyBuilder.BuildRankKey(id)).ToString().Replace('.', ',');
-
-        if (!double.TryParse(val, out var rank))
+        try
         {
-            throw new Exception("Could not read rank from Redis");
+            _logger.LogDebug(id);
+
+            Rank = double.Parse(_redis.StringGet(KeyBuilder.BuildRankKey(id)).ToString(), CultureInfo.InvariantCulture);
+
+            Similarity = double.Parse(_redis.StringGet(KeyBuilder.BuildSimilarityKey(id)).ToString(),
+                CultureInfo.InvariantCulture);
         }
-
-        Rank = rank;
-
-        if (!double.TryParse(_redis.StringGet(KeyBuilder.BuildSimilarityKey(id)), out var similatiry))
+        catch (Exception e)
         {
-            throw new Exception("Could not read similarity from Redis");
+            _logger.LogError(e.Message);
         }
-
-        Similarity = similatiry;
     }
 }
