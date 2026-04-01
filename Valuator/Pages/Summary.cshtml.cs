@@ -1,8 +1,7 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Localization;
 using StackExchange.Redis;
-using Valuator.Utils;
+using Utils;
 
 namespace Valuator.Pages;
 
@@ -17,6 +16,7 @@ public class SummaryModel : PageModel
         _redis = connectionMultiplexer.GetDatabase();
     }
 
+    public bool IsLoading { get; set; }
     public double Rank { get; set; }
     public double Similarity { get; set; }
 
@@ -25,8 +25,14 @@ public class SummaryModel : PageModel
         try
         {
             _logger.LogDebug(id);
+            
+            string? stringRank = _redis.StringGet(KeyBuilder.BuildRankKey(id));
+            if (stringRank is null)
+            {
+                IsLoading = true;
+            }
 
-            Rank = double.Parse(_redis.StringGet(KeyBuilder.BuildRankKey(id)).ToString(), CultureInfo.InvariantCulture);
+            Rank = double.Parse(stringRank, CultureInfo.InvariantCulture);
 
             Similarity = double.Parse(_redis.StringGet(KeyBuilder.BuildSimilarityKey(id)).ToString(),
                 CultureInfo.InvariantCulture);

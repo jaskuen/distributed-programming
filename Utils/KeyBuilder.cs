@@ -1,4 +1,4 @@
-﻿namespace Valuator.Utils;
+﻿namespace Utils;
 
 public static class KeyBuilder
 {

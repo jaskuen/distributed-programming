@@ -1,22 +1,24 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using StackExchange.Redis;
-using Valuator.Utils;
+using Utils;
+using Valuator.Messages;
 
 namespace Valuator.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly IConnectionMultiplexer _connectionMultiplexer;
     private readonly IDatabase _redis;
     private readonly ILogger<IndexModel> _logger;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public IndexModel(ILogger<IndexModel> logger, IConnectionMultiplexer connectionMultiplexer)
+    public IndexModel(ILogger<IndexModel> logger, IConnectionMultiplexer connectionMultiplexer,
+        IPublishEndpoint publishEndpoint)
     {
         _logger = logger;
-        _connectionMultiplexer = connectionMultiplexer;
+        _publishEndpoint = publishEndpoint;
         _redis = connectionMultiplexer.GetDatabase();
     }
 
@@ -24,7 +26,7 @@ public class IndexModel : PageModel
     {
     }
 
-    public IActionResult OnPost(string? text)
+    public async Task<IActionResult> OnPost(string? text)
     {
         try
         {
@@ -39,42 +41,12 @@ public class IndexModel : PageModel
 
             string textKey = KeyBuilder.BuildTextKey(id);
 
-            string rankKey = KeyBuilder.BuildRankKey(id);
-
-            int notAlphabetCount = 0;
-
-            foreach (char c in text)
-            {
-                if (!char.IsAsciiLetter(c))
-                {
-                    notAlphabetCount++;
-                }
-            }
-
-            double rank = (double)notAlphabetCount / text.Length;
-
-            _redis.StringSet(rankKey, rank.ToString(CultureInfo.InvariantCulture));
-
-            string similarityKey = KeyBuilder.BuildSimilarityKey(id);
-
-            var keys =
-                _redis
-                    .Multiplexer
-                    .GetServer(_connectionMultiplexer.GetEndPoints().First()).Keys(database: 0, pattern: "TEXT-*");
-
-            int similarity = 0;
-
-            foreach (var key in keys)
-            {
-                if (text == _redis.StringGet(key).ToString())
-                {
-                    similarity = 1;
-                    break;
-                }
-            }
-
-            _redis.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
             _redis.StringSet(textKey, text.ToString(CultureInfo.InvariantCulture));
+            await _publishEndpoint.Publish<ITextCreated>(new
+            {
+                Id = id,
+            });
+
             return Redirect($"summary?id={id}");
         }
         catch (Exception e)
