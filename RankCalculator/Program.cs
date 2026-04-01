@@ -16,20 +16,18 @@ public class Program
 
         builder.Services.AddMassTransit(x =>
         {
+            x.AddConsumer<CalculatorService>();
+            
             x.UsingRabbitMq((context, rabbitMqBusFactoryConfigurator) =>
             {
                 rabbitMqBusFactoryConfigurator.ReceiveEndpoint(
                     "save-text-event",
                     e =>
                     {
-                        e.Consumer(typeof(CalculatorService), context.GetRequiredService);
+                        e.ConfigureConsumer<CalculatorService>(context);
                     });
-                
-                rabbitMqBusFactoryConfigurator.ConfigureEndpoints(context);
             });
         });
-
-        builder.Services.AddScoped<CalculatorService>();
 
         var app = builder.Build();
         await app.RunAsync();

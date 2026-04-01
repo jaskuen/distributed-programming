@@ -15,14 +15,17 @@ public class Program
 
         builder.Services.AddMassTransit(x =>
         {
+            x.AddConsumer<RankCalculatedEvent>();
+            x.AddConsumer<SimilarityCalculatedEvent>();
+
             x.UsingRabbitMq((context, rabbitMqBusFactoryConfigurator) =>
             {
                 rabbitMqBusFactoryConfigurator.ReceiveEndpoint(
                     "save-text-event",
                     e =>
                     {
-                        e.Consumer(typeof(RankCalculatedEvent), context.GetRequiredService);
-                        e.Consumer(typeof(SimilarityCalculatedEvent), context.GetRequiredService);
+                        e.ConfigureConsumer<RankCalculatedEvent>(context);
+                        e.ConfigureConsumer<SimilarityCalculatedEvent>(context);
                     });
             });
         });

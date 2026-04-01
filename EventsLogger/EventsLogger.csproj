@@ -18,6 +18,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\RankCalculator\RankCalculator.csproj" />
+      <ProjectReference Include="..\Valuator\Valuator.csproj" />
     </ItemGroup>
 
 </Project>
