@@ -10,6 +10,7 @@ namespace Valuator.Pages;
 
 public class IndexModel : PageModel
 {
+    private readonly IConnectionMultiplexer _connectionMultiplexer;
     private readonly IDatabase _redis;
     private readonly ILogger<IndexModel> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
@@ -18,6 +19,7 @@ public class IndexModel : PageModel
         IPublishEndpoint publishEndpoint)
     {
         _logger = logger;
+        _connectionMultiplexer = connectionMultiplexer;
         _publishEndpoint = publishEndpoint;
         _redis = connectionMultiplexer.GetDatabase();
     }
@@ -46,6 +48,26 @@ public class IndexModel : PageModel
             {
                 Id = id,
             });
+            
+            string similarityKey = KeyBuilder.BuildSimilarityKey(id);
+
+            var keys =
+                _redis
+                    .Multiplexer
+                    .GetServer(_connectionMultiplexer.GetEndPoints().First()).Keys(database: 0, pattern: "TEXT-*");
+
+            int similarity = 0;
+
+            foreach (var key in keys)
+            {
+                if (text == _redis.StringGet(key).ToString())
+                {
+                    similarity = 1;
+                    break;
+                }
+            }
+        
+            _redis.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
 
             return Redirect($"summary?id={id}");
         }

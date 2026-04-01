@@ -51,25 +51,5 @@ public class CalculatorService : IConsumer<ITextCreated>
         double rank = (double)notAlphabetCount / text.Length;
 
         _redis.StringSet(rankKey, rank.ToString(CultureInfo.InvariantCulture));
-
-        string similarityKey = KeyBuilder.BuildSimilarityKey(id);
-
-        var keys =
-            _redis
-                .Multiplexer
-                .GetServer(_connectionMultiplexer.GetEndPoints().First()).Keys(database: 0, pattern: "TEXT-*");
-
-        int similarity = 0;
-
-        foreach (var key in keys)
-        {
-            if (text == _redis.StringGet(key).ToString())
-            {
-                similarity = 1;
-                break;
-            }
-        }
-        
-        _redis.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
     }
 }
