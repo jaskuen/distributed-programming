@@ -10,9 +10,6 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
 
-        builder.Services.AddScoped<RankCalculatedEvent>();
-        builder.Services.AddScoped<SimilarityCalculatedEvent>();
-
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<RankCalculatedEvent>();
@@ -20,13 +17,7 @@ public class Program
 
             x.UsingRabbitMq((context, rabbitMqBusFactoryConfigurator) =>
             {
-                rabbitMqBusFactoryConfigurator.ReceiveEndpoint(
-                    "save-text-event",
-                    e =>
-                    {
-                        e.ConfigureConsumer<RankCalculatedEvent>(context);
-                        e.ConfigureConsumer<SimilarityCalculatedEvent>(context);
-                    });
+                rabbitMqBusFactoryConfigurator.ConfigureEndpoints(context);
             });
         });
 
