@@ -28,7 +28,10 @@
                 const rankValue = document.getElementById("rank-value");
 
                 const connection = new signalR.HubConnectionBuilder()
-                    .withUrl(`/rankHub?textId=${encodeURIComponent(textId)}`)
+                    .withUrl(`/rankHub?textId=${encodeURIComponent(textId)}`, {
+                        transport: signalR.HttpTransportType.WebSockets,
+                        skipNegotiation: true
+                    })
                     .withAutomaticReconnect()
                     .build();
 

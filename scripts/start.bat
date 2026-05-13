@@ -1,25 +1,22 @@
-﻿cd /d ../.
+@echo off
+set "ROOT=%~dp0.."
+
+cd /d "%ROOT%"
 start "DockerInstance" docker compose up
 
-cd /d ..\Valuator
+start "ValuatorInstance1" /D "%ROOT%\Valuator" dotnet run --urls=http://0.0.0.0:5001
+start "ValuatorInstance2" /D "%ROOT%\Valuator" dotnet run --urls=http://0.0.0.0:5002
 
-@echo off
-start "ValuatorInstance1" dotnet run --urls=http://localhost:5001
-start "ValuatorInstance2" dotnet run --urls=http://localhost:5002
+start "RankInstance1" /D "%ROOT%\RankCalculator" dotnet run --urls=http://localhost:5003
+start "RankInstance2" /D "%ROOT%\RankCalculator" dotnet run --urls=http://localhost:5004
 
-cd /d ..\RankCalculator
+start "EventsLoggerInstance" /D "%ROOT%\EventsLogger" dotnet run --urls=http://localhost:5005
 
-@echo off
-start "RankInstance1" dotnet run --urls=http://localhost:5003
-start "RankInstance2" dotnet run --urls=http://localhost:5004
-
-cd /d ..\EventsLogger
-
-@echo off
-start "EventsLoggerInstance" dotnet run --urls=http://localhost:5005
-
-
-cd /d C:\nginx
-stop nginx
-start nginx
-nginx -s reload
+if exist "C:\nginx\nginx.exe" (
+    copy /Y "%ROOT%\nginx\conf\nginx.conf" "C:\nginx\conf\nginx.conf"
+    cd /d C:\nginx
+    nginx -s stop
+    start "NginxInstance" nginx
+) else (
+    echo C:\nginx\nginx.exe not found
+)

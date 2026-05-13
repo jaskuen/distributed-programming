@@ -5,9 +5,9 @@ taskkill /FI "WINDOWTITLE eq RankInstance1" /T /F
 taskkill /FI "WINDOWTITLE eq RankInstance2" /T /F
 taskkill /FI "WINDOWTITLE eq EventsLoggerInstance" /T /F
 taskkill /FI "WINDOWTITLE eq DockerInstance" /T /F
-pause
+taskkill /FI "WINDOWTITLE eq NginxInstance" /T /F
 
-cd /d C:\Users\Jaskuen\Documents\GitHub\DISTRIBUTED-PROGRAMMING\Valuator
+cd /d "%~dp0.."
 docker compose down
 
 cd /d C:\nginx
