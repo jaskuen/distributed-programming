@@ -1,13 +1,45 @@
-﻿@page
+@page
+@using System.Globalization
+@using System.Text.Json
 @model Valuator.Pages.SummaryModel
 @{
+    ViewData["Title"] = "Summary";
 }
-@if (@Model.IsLoading)
+
+<p id="rank-loading" class="@(Model.IsLoading ? "" : "d-none")">Оценка содержания не завершена</p>
+<p id="rank-result" class="@(Model.IsLoading ? "d-none" : "")">
+    Оценка содержания: <span id="rank-value">@Model.Rank?.ToString(CultureInfo.InvariantCulture)</span>
+</p>
+
+@if (Model.Similarity.HasValue)
 {
-    <p>Оценка ещё не окончена. Пожалуйста, попробуйте обновить страницу</p>
+    <p>Плагиат: @Model.Similarity.Value.ToString(CultureInfo.InvariantCulture)</p>
 }
-else
-{
-    <p>Оценка содержания: @Model.Rank</p>
-    <p>Плагиат: @Model.Similarity</p>
+
+@section Scripts {
+    @if (Model.IsLoading && !string.IsNullOrWhiteSpace(Model.Id))
+    {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+        <script>
+            (() => {
+                const textId = @Html.Raw(JsonSerializer.Serialize(Model.Id));
+                const loading = document.getElementById("rank-loading");
+                const result = document.getElementById("rank-result");
+                const rankValue = document.getElementById("rank-value");
+
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl(`/rankHub?textId=${encodeURIComponent(textId)}`)
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on("RankCalculated", rank => {
+                    rankValue.textContent = rank.toString();
+                    loading.classList.add("d-none");
+                    result.classList.remove("d-none");
+                });
+
+                connection.start().catch(error => console.error(error));
+            })();
+        </script>
+    }
 }

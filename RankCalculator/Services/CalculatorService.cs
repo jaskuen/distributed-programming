@@ -24,13 +24,15 @@ public class CalculatorService : IConsumer<ITextCreated>
     {
         string id = context.Message.Id;
 
-        await Calculate(id);
-
-        await Task.CompletedTask;
+        await Calculate(id, context.CancellationToken);
     }
 
-    private async Task Calculate(string id)
+    private async Task Calculate(string id, CancellationToken ct)
     {
+        TimeSpan interval = TimeSpan.FromSeconds(new Random().Next(3, 15));
+        Console.WriteLine($"Waiting {interval}");
+        await Task.Delay(interval, ct);
+
         string text = _redis.StringGet(KeyBuilder.BuildTextKey(id))!;
 
         Console.WriteLine($"Got text: {text}; by id: {id}");

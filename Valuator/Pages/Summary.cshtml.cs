@@ -16,26 +16,36 @@ public class SummaryModel : PageModel
         _redis = connectionMultiplexer.GetDatabase();
     }
 
+    public string? Id { get; set; }
     public bool IsLoading { get; set; }
-    public double Rank { get; set; }
-    public double Similarity { get; set; }
+    public double? Rank { get; set; }
+    public double? Similarity { get; set; }
 
     public void OnGet(string id)
     {
         try
         {
-            _logger.LogDebug(id);
-            
-            string? stringRank = _redis.StringGet(KeyBuilder.BuildRankKey(id));
-            if (stringRank is null)
+            Id = id;
+            _logger.LogDebug("{Id}", id);
+
+            RedisValue stringRank = _redis.StringGet(KeyBuilder.BuildRankKey(id));
+            if (stringRank.HasValue &&
+                double.TryParse(stringRank.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double rank))
+            {
+                Rank = rank;
+            }
+            else
             {
                 IsLoading = true;
             }
 
-            Rank = double.Parse(stringRank, CultureInfo.InvariantCulture);
-
-            Similarity = double.Parse(_redis.StringGet(KeyBuilder.BuildSimilarityKey(id)).ToString(),
-                CultureInfo.InvariantCulture);
+            RedisValue stringSimilarity = _redis.StringGet(KeyBuilder.BuildSimilarityKey(id));
+            if (stringSimilarity.HasValue &&
+                double.TryParse(stringSimilarity.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture,
+                    out double similarity))
+            {
+                Similarity = similarity;
+            }
         }
         catch (Exception e)
         {

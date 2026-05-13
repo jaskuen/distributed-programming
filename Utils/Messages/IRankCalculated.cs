@@ -1,4 +1,4 @@
-﻿namespace RankCalculator.Messages;
+namespace RankCalculator.Messages;
 
 public interface IRankCalculated
 {

@@ -1,5 +1,7 @@
 using MassTransit;
 using StackExchange.Redis;
+using Valuator.Consumers;
+using Valuator.Hubs;
 
 namespace Valuator;
 
@@ -11,13 +13,26 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddRazorPages();
+        builder.Services.AddSignalR();
 
         builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
 
         builder.Services.AddMassTransit(x =>
         {
-            x.UsingRabbitMq();
+            x.AddConsumer<RankCalculatedConsumer>();
+
+            x.UsingRabbitMq((context, rabbitMqBusFactoryConfigurator) =>
+            {
+                rabbitMqBusFactoryConfigurator.ReceiveEndpoint(
+                    $"rank-calculated-notifications-{Guid.NewGuid():N}",
+                    endpoint =>
+                    {
+                        endpoint.AutoDelete = true;
+                        endpoint.Durable = false;
+                        endpoint.ConfigureConsumer<RankCalculatedConsumer>(context);
+                    });
+            });
         });
 
         var app = builder.Build();
@@ -35,6 +50,7 @@ public class Program
         app.UseAuthorization();
 
         app.MapRazorPages();
+        app.MapHub<RankHub>("/rankHub");
 
         app.Run();
     }
