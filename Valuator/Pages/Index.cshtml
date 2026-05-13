@@ -6,10 +6,19 @@
 
 <div class="text-center">
     <form method="post">
+        <div class="col-2">Страна гражданства:</div>
+        <div class="col-10 mb-3">
+            <select name="country" class="form-select" required>
+                @foreach (var country in Model.Countries)
+                {
+                    <option value="@country.Country">@country.Country (@country.Region)</option>
+                }
+            </select>
+        </div>
         <div class="col-2">Текст для оценки:</div>
         <div class="col-10">
-            <textarea name="text" rows="5" cols="50"></textarea>
-            <input type="submit" />
+            <textarea name="text" rows="5" cols="50" required></textarea>
+            <input type="submit" class="btn btn-primary" />
         </div>
     </form>
 </div>

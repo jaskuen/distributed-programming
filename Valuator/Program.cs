@@ -1,5 +1,5 @@
 using MassTransit;
-using StackExchange.Redis;
+using Utils;
 
 namespace Valuator;
 
@@ -12,8 +12,8 @@ public class Program
         // Add services to the container.
         builder.Services.AddRazorPages();
 
-        builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
-            ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
+        builder.Services.AddSingleton(_ =>
+            RedisShardStore.Create(builder.Configuration.GetConnectionString("Redis")));
 
         builder.Services.AddMassTransit(x =>
         {

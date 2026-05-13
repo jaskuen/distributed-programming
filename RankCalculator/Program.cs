@@ -1,6 +1,6 @@
 ﻿using MassTransit;
 using RankCalculator.Services;
-using StackExchange.Redis;
+using Utils;
 
 public class Program
 {
@@ -11,8 +11,8 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
 
-        builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
-            ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
+        builder.Services.AddSingleton(_ =>
+            RedisShardStore.Create(builder.Configuration.GetConnectionString("Redis")));
 
         builder.Services.AddMassTransit(x =>
         {

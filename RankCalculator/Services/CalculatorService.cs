@@ -9,15 +9,13 @@ namespace RankCalculator.Services;
 
 public class CalculatorService : IConsumer<ITextCreated>
 {
-    private readonly IConnectionMultiplexer _connectionMultiplexer;
-    private readonly IDatabase _redis;
+    private readonly RedisShardStore _redisShardStore;
     private readonly IPublishEndpoint _publishEndpoint;
 
-    public CalculatorService(IConnectionMultiplexer connectionMultiplexer, IPublishEndpoint publishEndpoint)
+    public CalculatorService(RedisShardStore redisShardStore, IPublishEndpoint publishEndpoint)
     {
-        _connectionMultiplexer = connectionMultiplexer;
+        _redisShardStore = redisShardStore;
         _publishEndpoint = publishEndpoint;
-        _redis = _connectionMultiplexer.GetDatabase();
     }
 
     public async Task Consume(ConsumeContext<ITextCreated> context)
@@ -31,7 +29,11 @@ public class CalculatorService : IConsumer<ITextCreated>
 
     private async Task Calculate(string id)
     {
-        string text = _redis.StringGet(KeyBuilder.BuildTextKey(id))!;
+        string region = _redisShardStore.GetShardKey(id);
+        IDatabase shardDatabase = _redisShardStore.GetShardDatabase(region);
+        Console.WriteLine($"LOOKUP: {id}, {region}");
+
+        string text = shardDatabase.StringGet(KeyBuilder.BuildTextKey(id))!;
 
         Console.WriteLine($"Got text: {text}; by id: {id}");
 
@@ -53,7 +55,7 @@ public class CalculatorService : IConsumer<ITextCreated>
         string rankKey = KeyBuilder.BuildRankKey(id);
         double rank = (double)notAlphabetCount / text.Length;
 
-        _redis.StringSet(rankKey, rank.ToString(CultureInfo.InvariantCulture));
+        shardDatabase.StringSet(rankKey, rank.ToString(CultureInfo.InvariantCulture));
 
         await _publishEndpoint.Publish<IRankCalculated>(new
         {

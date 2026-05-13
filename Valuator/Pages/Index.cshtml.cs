@@ -10,25 +10,25 @@ namespace Valuator.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly IConnectionMultiplexer _connectionMultiplexer;
-    private readonly IDatabase _redis;
+    private readonly RedisShardStore _redisShardStore;
     private readonly ILogger<IndexModel> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
 
-    public IndexModel(ILogger<IndexModel> logger, IConnectionMultiplexer connectionMultiplexer,
+    public IndexModel(ILogger<IndexModel> logger, RedisShardStore redisShardStore,
         IPublishEndpoint publishEndpoint)
     {
         _logger = logger;
-        _connectionMultiplexer = connectionMultiplexer;
+        _redisShardStore = redisShardStore;
         _publishEndpoint = publishEndpoint;
-        _redis = connectionMultiplexer.GetDatabase();
     }
+
+    public IReadOnlyList<CountryOption> Countries => CountryRegions.Countries;
 
     public void OnGet()
     {
     }
 
-    public async Task<IActionResult> OnPost(string? text)
+    public async Task<IActionResult> OnPost(string? text, string? country)
     {
         try
         {
@@ -37,13 +37,24 @@ public class IndexModel : PageModel
                 throw new Exception("Text is empty");
             }
 
+            if (string.IsNullOrWhiteSpace(country))
+            {
+                throw new Exception("Country is empty");
+            }
+
+            string region = CountryRegions.GetRegionForCountry(country);
             string id = Guid.NewGuid().ToString();
+            IDatabase shardDatabase = _redisShardStore.GetShardDatabase(region);
 
             _logger.LogDebug(text);
+            _logger.LogInformation("LOOKUP: {Id}, {Region}", id, region);
 
             string textKey = KeyBuilder.BuildTextKey(id);
+            string countryKey = KeyBuilder.BuildCountryKey(id);
 
-            _redis.StringSet(textKey, text.ToString(CultureInfo.InvariantCulture));
+            _redisShardStore.SaveShardKey(id, region);
+            shardDatabase.StringSet(textKey, text.ToString(CultureInfo.InvariantCulture));
+            shardDatabase.StringSet(countryKey, country);
             await _publishEndpoint.Publish<ITextCreated>(new
             {
                 Id = id,
@@ -52,22 +63,28 @@ public class IndexModel : PageModel
             string similarityKey = KeyBuilder.BuildSimilarityKey(id);
 
             var keys =
-                _redis
+                shardDatabase
                     .Multiplexer
-                    .GetServer(_connectionMultiplexer.GetEndPoints().First()).Keys(database: 0, pattern: "TEXT-*");
+                    .GetServer(_redisShardStore.GetShardConnection(region).GetEndPoints().First())
+                    .Keys(database: 0, pattern: "TEXT-*");
 
             int similarity = 0;
 
             foreach (var key in keys)
             {
-                if (text == _redis.StringGet(key).ToString())
+                if (key == textKey)
+                {
+                    continue;
+                }
+
+                if (text == shardDatabase.StringGet(key).ToString())
                 {
                     similarity = 1;
                     break;
                 }
             }
         
-            _redis.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
+            shardDatabase.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
 
             await _publishEndpoint.Publish<ISimilarityCalculated>(new
             {
