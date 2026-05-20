@@ -1,8 +1,11 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Valuator", "Valuator\Valuator.csproj", "{BB3B7AF3-09CB-8246-6EE6-CF385AAB4AA1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoKey", "ProtoKey\ProtoKey.csproj", "{E0AD0C0A-4E7A-45D1-A3F5-0E894B35C8FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoCli", "ProtoCli\ProtoCli.csproj", "{F81D020D-9E38-4FEA-B056-EC5C2A950A30}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{BB3B7AF3-09CB-8246-6EE6-CF385AAB4AA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BB3B7AF3-09CB-8246-6EE6-CF385AAB4AA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BB3B7AF3-09CB-8246-6EE6-CF385AAB4AA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BB3B7AF3-09CB-8246-6EE6-CF385AAB4AA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0AD0C0A-4E7A-45D1-A3F5-0E894B35C8FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0AD0C0A-4E7A-45D1-A3F5-0E894B35C8FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0AD0C0A-4E7A-45D1-A3F5-0E894B35C8FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0AD0C0A-4E7A-45D1-A3F5-0E894B35C8FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F81D020D-9E38-4FEA-B056-EC5C2A950A30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F81D020D-9E38-4FEA-B056-EC5C2A950A30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F81D020D-9E38-4FEA-B056-EC5C2A950A30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F81D020D-9E38-4FEA-B056-EC5C2A950A30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
