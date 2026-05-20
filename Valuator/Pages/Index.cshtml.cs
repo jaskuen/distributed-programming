@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Security.Claims;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using StackExchange.Redis;
@@ -8,6 +10,7 @@ using Valuator.Messages;
 
 namespace Valuator.Pages;
 
+[Authorize]
 public class IndexModel : PageModel
 {
     private readonly IConnectionMultiplexer _connectionMultiplexer;
@@ -38,17 +41,23 @@ public class IndexModel : PageModel
             }
 
             string id = Guid.NewGuid().ToString();
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId is null)
+            {
+                return Challenge();
+            }
 
             _logger.LogDebug(text);
 
             string textKey = KeyBuilder.BuildTextKey(id);
 
             _redis.StringSet(textKey, text.ToString(CultureInfo.InvariantCulture));
+            _redis.StringSet(KeyBuilder.BuildTextOwnerKey(id), userId);
             await _publishEndpoint.Publish<ITextCreated>(new
             {
                 Id = id,
             });
-            
+
             string similarityKey = KeyBuilder.BuildSimilarityKey(id);
 
             var keys =
@@ -60,13 +69,13 @@ public class IndexModel : PageModel
 
             foreach (var key in keys)
             {
-                if (text == _redis.StringGet(key).ToString())
+                if (key != textKey && text == _redis.StringGet(key).ToString())
                 {
                     similarity = 1;
                     break;
                 }
             }
-        
+
             _redis.StringSet(similarityKey, similarity.ToString(CultureInfo.InvariantCulture));
 
             await _publishEndpoint.Publish<ISimilarityCalculated>(new

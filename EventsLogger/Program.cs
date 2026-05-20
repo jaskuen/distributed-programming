@@ -17,6 +17,14 @@ public class Program
 
             x.UsingRabbitMq((context, rabbitMqBusFactoryConfigurator) =>
             {
+                rabbitMqBusFactoryConfigurator.Host(
+                    new Uri(builder.Configuration["RabbitMq:RabbitServer"]!),
+                    h =>
+                    {
+                        h.Username(builder.Configuration["RabbitMq:RabbitUsername"]!);
+                        h.Password(builder.Configuration["RabbitMq:RabbitPassword"]!);
+                    });
+
                 rabbitMqBusFactoryConfigurator.ConfigureEndpoints(context);
             });
         });

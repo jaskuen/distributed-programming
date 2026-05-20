@@ -8,12 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Reference Include="MassTransit.Abstractions">
-        <HintPath>..\Valuator\bin\Debug\net8.0\MassTransit.Abstractions.dll</HintPath>
-      </Reference>
-      <Reference Include="Microsoft.AspNetCore">
-        <HintPath>..\..\..\..\..\..\Program Files\dotnet\shared\Microsoft.AspNetCore.App\8.0.2\Microsoft.AspNetCore.dll</HintPath>
-      </Reference>
+      <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.8" />
     </ItemGroup>
 
     <ItemGroup>

@@ -2,12 +2,16 @@
   redis:
     image: redis:alpine
     container_name: valuator
+    command: redis-server --requirepass ${REDIS_PASSWORD:-admin}
     ports:
       - 6379:6379
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin}
     ports:
       - "5672:5672"
       - "15672:15672"
