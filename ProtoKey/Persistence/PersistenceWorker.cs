@@ -28,6 +28,7 @@ internal sealed class PersistenceWorker(
             catch (Exception exception)
             {
                 logger.LogError(exception, "Failed to persist commands.");
+                FailPendingCommands(exception);
             }
         }
 
@@ -56,6 +57,14 @@ internal sealed class PersistenceWorker(
             pendingCommands.Select(command => command.ToDataLine()),
             cancellationToken);
 
+        pendingCommands.ForEach(command => command.Completion?.TrySetResult());
+
+        pendingCommands.Clear();
+    }
+
+    private void FailPendingCommands(Exception exception)
+    {
+        pendingCommands.ForEach(command => command.Completion?.TrySetException(exception));
         pendingCommands.Clear();
     }
 }

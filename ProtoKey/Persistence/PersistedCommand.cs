@@ -1,6 +1,9 @@
 namespace ProtoKey.Persistence;
 
-internal sealed record PersistedCommand(string Key, int Value)
+internal sealed record PersistedCommand(
+    string Key,
+    int Value,
+    TaskCompletionSource? Completion = null)
 {
     public string ToDataLine() => $"set {Key} {Value}";
 

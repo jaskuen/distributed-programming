@@ -22,10 +22,16 @@ internal sealed class StoreWorker(
                 switch (command)
                 {
                     case SetCommand setCommand:
-                        storage[setCommand.Key] = setCommand.Value;
+                        TaskCompletionSource persistenceCompletion = new(
+                            TaskCreationOptions.RunContinuationsAsynchronously);
+
                         await persistedCommands.Writer.WriteAsync(
-                            new PersistedCommand(setCommand.Key, setCommand.Value),
+                            new PersistedCommand(setCommand.Key, setCommand.Value, persistenceCompletion),
                             stoppingToken);
+
+                        await persistenceCompletion.Task.WaitAsync(stoppingToken);
+
+                        storage[setCommand.Key] = setCommand.Value;
                         setCommand.Completion.TrySetResult(StoreResponse.Ok());
                         break;
 
